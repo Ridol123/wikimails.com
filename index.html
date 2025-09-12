@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>wikimails.com</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: linear-gradient(135deg, #0f2027, #203a43, #2c5664); color: #fff; min-height: 100vh; }
+        
+        /* Header, Sidebar, Overlay */
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 50px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .logo { display: flex; align-items: center; gap: 10px; }
+        .logo i { font-size: 28px; color: #4fc3f7; }
+        .logo h1 { font-size: 24px; font-weight: 600; }
+        .nav-buttons button { background: none; border: 1px solid #4fc3f7; color: #4fc3f7; padding: 8px 15px; border-radius: 5px; cursor: pointer; transition: background-color 0.3s; }
+        .nav-buttons button:hover { background: rgba(79,195,247,0.1); }
+        .hamburger { display: flex; flex-direction: column; justify-content: space-between; width: 30px; height: 21px; cursor: pointer; z-index: 1001; }
+        .hamburger span { height: 3px; width: 100%; background-color: #4fc3f7; border-radius: 3px; }
+        .sidebar { position: fixed; top: 0; right: -300px; width: 300px; height: 100vh; background: rgba(15,32,39,0.95); backdrop-filter: blur(10px); padding: 80px 20px 20px; z-index: 1000; transition: right 0.3s ease; }
+        .sidebar.open { right: 0; }
+        .close-btn { position: absolute; top: 20px; right: 20px; font-size: 24px; color: #fff; background: none; border: none; cursor: pointer; }
+        .nav { display: flex; flex-direction: column; gap: 15px; }
+        .nav a { display: flex; align-items: center; gap: 15px; color: #ddd; text-decoration: none; padding: 15px; border-radius: 4px; font-size: 18px; }
+        .nav a:hover { color: #4fc3f7; background: rgba(79,195,247,0.1); }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; display: none; }
+        .overlay.open { display: block; }
+        .page { display: none; }
+        .page.active { display: block; }
+
+        /* Home Page Styles */
+        .hero { text-align: center; padding: 50px 20px; }
+        .hero h2 { font-size: 36px; margin-bottom: 20px; background: linear-gradient(to right, #4fc3f7, #00e5ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { max-width: 700px; margin: 0 auto 30px; color: #ccc; line-height: 1.6; }
+        .cta-buttons { display: flex; justify-content: center; margin-top: 30px; }
+        .btn-primary { display: inline-flex; align-items: center; gap: 10px; padding: 15px 30px; background: linear-gradient(to right, #00e5ff, #4fc3f7); color: #0f2027; border: none; border-radius: 50px; font-weight: 600; font-size: 18px; cursor: pointer; text-decoration: none; }
+        .plans-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 30px; max-width: 1200px; margin: 20px auto; padding: 20px; }
+        .plan { background: rgba(21, 59, 77, 0.7); border-radius: 16px; padding: 30px; width: 350px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); display: flex; flex-direction: column; border: 1px solid rgba(79, 195, 247, 0.2); }
+        .plan-header { text-align: center; margin-bottom: 25px; }
+        .plan-name { font-size: 24px; font-weight: 600; margin-bottom: 10px; color: #4fc3f7; }
+        .plan-price { font-size: 36px; font-weight: 700; }
+        .plan-price-description { text-align: center; margin-top: -10px; margin-bottom: 20px; color: #ccc; font-size: 14px; }
+        .plan-features { margin-bottom: 25px; flex-grow: 1; list-style: none; }
+        .feature { display: flex; align-items: center; margin-bottom: 15px; gap: 10px;}
+        .feature i { color: #4fc3f7; }
+        .btn { display: block; text-align: center; padding: 12px 20px; background: linear-gradient(to right, #00e5ff, #4fc3f7); color: #0f2027; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .contact-btn { background: transparent; border: 2px solid #4fc3f7; color: #4fc3f7; }
+        
+        /* Auth Pages */
+        .auth-container { display: flex; justify-content: center; align-items: center; min-height: 80vh; padding: 20px; }
+        .auth-box { background: rgba(21, 59, 77, 0.8); border-radius: 16px; padding: 40px; width: 100%; max-width: 450px; }
+        .auth-box h2, .auth-switch { text-align: center; margin-bottom: 20px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group input { width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid #555; border-radius: 8px; color: #fff; }
+        .auth-switch a { color: #4fc3f7; cursor: pointer; }
+        .error-message { color: #ff8a80; text-align: center; margin-bottom: 15px; min-height: 1.2em; }
+        .google-btn { background: #fff; color: #333; display: flex; align-items: center; justify-content: center; }
+        .or-separator { text-align: center; margin: 20px 0; color: #ccc; }
+        
+        /* User Panel Styles */
+        #user-panel-container { max-width: 800px; margin: 20px auto; padding: 15px; }
+        .main-title { font-size: 24px; font-weight: 600; text-align: center; margin-bottom: 25px; word-wrap: break-word; }
+        .card { background: rgba(21, 59, 77, 0.8); border-radius: 16px; padding: 25px; margin-bottom: 20px; border: 1px solid rgba(79, 195, 247, 0.2); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .card-header h3 { font-size: 22px; display: flex; align-items: center; gap: 12px; }
+        .searches-left { background-color: rgba(79, 195, 247, 0.2); color: #4fc3f7; padding: 8px 15px; border-radius: 20px; }
+        .input-group { display: flex; align-items: center; gap: 10px; }
+        .form-group input:disabled { background-color: rgba(0,0,0,0.2); cursor: not-allowed; }
+        .form-group textarea { width: 100%; padding: 12px 15px; background: rgba(0,0,0,0.3); border: 1px solid #555; border-radius: 8px; color: #fff; min-height: 100px; }
+        .edit-btn { background: #4fc3f7; color: #112B3C; border: none; border-radius: 8px; width: 45px; height: 45px; cursor: pointer; flex-shrink: 0; }
+        .action-btn { width: 100%; padding: 14px; background: linear-gradient(to right, #00e5ff, #4fc3f7); color: #0f2027; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
+        #live-email-count { font-size: 48px; font-weight: 700; color: #00e5ff; }
+        #live-collection-card { text-align: center; }
+        #active-log-content p { word-wrap: break-word; }
+        #limit-over-card { display: none; text-align: center; background: rgba(229, 57, 53, 0.2); }
+        #limit-over-card h3 { color: #ff8a80; }
+        #update-limit-btn { background: #25D366; color: white; max-width: 250px; margin: 10px auto 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .history-item { background: rgba(15, 32, 39, 0.8); padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid #4fc3f7; }
+        .history-item p { word-wrap: break-word; }
+        .download-btn { padding: 8px 15px; font-size: 14px; margin-top: 10px; }
+        .whatsapp-float { position: fixed; width: 60px; height: 60px; bottom: 40px; right: 40px; background-color: #25D366; color: #FFF; border-radius: 50px; text-align: center; font-size: 30px; z-index: 100; display: flex; justify-content: center; align-items: center; text-decoration: none; }
+        
+        .history-details { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; gap: 15px; flex-wrap: wrap; }
+        .history-details p { margin: 0; }
+        .history-item .download-btn { width: auto; margin-top: 0; flex-shrink: 0; }
+    </style>
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    <div class="header">
+        <div class="logo">
+            <i class="fas fa-envelope-open-text"></i>
+            <h1>wikimails.com</h1>
+        </div>
+        <div class="nav-buttons">
+            <button id="logout-btn" style="display: none;">Logout</button>
+        </div>
+        <div class="hamburger" id="hamburger"><span></span><span></span><span></span></div>
+    </div>
+
+    <div class="sidebar" id="sidebar">
+        <button class="close-btn" id="close-sidebar"><i class="fas fa-times"></i></button>
+        <div class="nav">
+            <a href="#" id="nav-home"><i class="fas fa-home"></i> Home</a>
+            <a href="#" id="nav-login"><i class="fas fa-user"></i> Login</a>
+            <a href="#" id="nav-signup"><i class="fas fa-user-plus"></i> Sign Up</a>
+        </div>
+    </div>
+
+    <!-- HOME PAGE -->
+    <div class="page active" id="home-page">
+        <div class="hero">
+            <h2>Welcome to wikimails.com</h2>
+            <p>The most powerful tool to extract emails for your marketing needs. Choose a plan or log in to access your dashboard.</p>
+            <div class="cta-buttons"><a href="#" class="btn-primary" id="get-started-btn">Get Started</a></div>
+        </div>
+
+        <!-- ***** প্ল্যান সেকশন পরিবর্তন করা হয়েছে ***** -->
+        <div class="plans-container">
+            <div class="plan">
+                <div class="plan-header">
+                    <div class="plan-name">Free Plan</div>
+                    <div class="plan-price">$00</div>
+                    <div class="plan-price-description">free plan</div>
+                </div>
+                <ul class="plan-features">
+                    <li class="feature"><i class="fas fa-check-circle"></i><span>100 Searches</span></li>
+                    <li class="feature"><i class="fas fa-check-circle"></i><span>5k Email Collect</span></li>
+                </ul>
+                <a href="#" class="btn contact-btn buy-now-btn">Contact the admin</a>
+            </div>
+            <div class="plan">
+                <div class="plan-header">
+                    <div class="plan-name">Basic Plan</div>
+                    <div class="plan-price">$100</div>
+                    <div class="plan-price-description">for Basic plan</div>
+                </div>
+                <ul class="plan-features">
+                    <li class="feature"><i class="fas fa-check-circle"></i><span>10k Searches</span></li>
+                    <li class="feature"><i class="fas fa-check-circle"></i><span>500k Email Collect</span></li>
+                    <li class="feature"><i class="fas fa-check-circle"></i><span>24/7 Support</span></li>
+                </ul>
+                <a href="#" class="btn buy-now-btn">Buy Now - $100</a>
+            </div>
+            <div class="plan">
+                <div class="plan-header">
+                    <div class="plan-name">Pro Plan</div>
+                    <div class="plan-price">$450</div>
+                     <div class="plan-price-description">for Pro plan</div>
+                </div>
+                <ul class="plan-features">
+                    <li class="feature"><i class="fas fa-check-circle"></i><span>50k Searches</span></li>
+                    <li class="feature"><i class="fas fa-check-circle"></i><span>2.5 Million Email Collect</span></li>
+                     <li class="feature"><i class="fas fa-check-circle"></i><span>Priority Support</span></li>
+                </ul>
+                <a href="#" class="btn buy-now-btn">Buy Now - $450</a>
+            </div>
+        </div>
+        <!-- ***** প্ল্যান সেকশন পরিবর্তন শেষ ***** -->
+
+    </div>
+
+    <!-- LOGIN & SIGNUP PAGES -->
+    <div class="page" id="login-page">
+        <div class="auth-container">
+            <div class="auth-box">
+                <h2>Login</h2><p class="error-message" id="login-error"></p>
+                <form id="login-form">
+                    <div class="form-group"><input type="email" name="email" placeholder="Email" required></div>
+                    <div class="form-group"><input type="password" name="password" placeholder="Password" required></div>
+                    <button type="submit" class="action-btn">Login</button>
+                </form>
+                <div class="or-separator">OR</div>
+                <button class="action-btn google-btn" id="google-login-btn">
+                    <i class="fab fa-google" style="margin-right: 10px;"></i> Continue with Google
+                </button>
+                <p class="auth-switch" style="margin-top: 20px;">Don't have an account? <a id="show-signup">Sign Up</a></p>
+            </div>
+        </div>
+    </div>
+    <div class="page" id="signup-page">
+        <div class="auth-container">
+            <div class="auth-box">
+                <h2>Sign Up</h2><p class="error-message" id="signup-error"></p>
+                <form id="signup-form">
+                    <div class="form-group"><input type="email" name="email" placeholder="Email" required></div>
+                    <div class="form-group"><input type="password" name="password" placeholder="Password (min. 6 characters)" required></div>
+                    <button type="submit" class="action-btn">Sign Up</button>
+                </form>
+                <p class="auth-switch">Already have an account? <a id="show-login">Login</a></p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- USER PANEL PAGE -->
+    <div class="page" id="user-panel">
+        <div id="user-panel-container">
+            <h2 class="main-title">Welcome, <span id="user-email-display"></span></h2>
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-key"></i> Access key</h3>
+                    <div class="searches-left" id="searches-left">Searches Left: N/A</div>
+                </div>
+                <div class="form-group">
+                    <label>Access key : Searches</label>
+                    <div class="input-group">
+                        <input type="text" id="api-key-input" placeholder="Enter and save your access key" disabled>
+                        <button class="edit-btn" id="edit-api-key-btn"><i class="fas fa-save"></i></button>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-file-alt"></i> Keywords</h3></div>
+                <div class="form-group"><textarea id="keywords-input" placeholder="Enter one keyword per line"></textarea></div>
+            </div>
+            <div class="card">
+                <button class="action-btn" id="start-btn">Start Scraping</button>
+                <button class="action-btn" id="stop-btn" style="background: #e53935; margin-top: 15px;">Stop Scraping</button>
+            </div>
+            <div class="card" id="limit-over-card">
+                <h3><i class="fas fa-exclamation-triangle"></i> Search Limit Reached</h3>
+                <p>Please update your plan to continue.</p>
+                <button class="action-btn" id="update-limit-btn"><i class="fab fa-whatsapp"></i> Update Limit</button>
+            </div>
+            <div class="card" id="live-collection-card" style="display: none;">
+                <h3><i class="fas fa-broadcast-tower"></i> Live Collection</h3>
+                <p>Total unique emails collected</p>
+                <h2 id="live-email-count">0</h2>
+                <button class="action-btn" id="live-download-btn" disabled>Download Collected Emails</button>
+            </div>
+            <div class="card" id="active-log-card">
+                <h3><i class="fas fa-bolt"></i> Active Log</h3>
+                <div id="active-log-content"><p>Idle. Enter API key and keywords to begin.</p></div>
+            </div>
+            <div class="card" id="history-card">
+                <h3><i class="fas fa-history"></i> Scraping History</h3>
+                <div id="history-section"><p>Loading history...</p></div>
+            </div>
+        </div>
+    </div>
+
+    <a href="https://wa.me/qr/UVDDQAD5XCKOE1" class="whatsapp-float" target="_blank"><i class="fab fa-whatsapp"></i></a>
+
+    <script type="module">
+        // Import the functions you need from the SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { 
+            getAuth, 
+            onAuthStateChanged,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut,
+            GoogleAuthProvider,
+            signInWithPopup
+        } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { 
+            getFirestore,
+            collection,
+            addDoc,
+            serverTimestamp,
+            query,
+            orderBy,
+            getDocs,
+            doc,
+            setDoc,
+            getDoc
+        } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAeqkz-lTJ2HgOsjMeB3yW-Qz00C2RYVqM",
+            authDomain: "email-harvester-pro-2.firebaseapp.com",
+            projectId: "email-harvester-pro-2",
+            storageBucket: "email-harvester-pro-2.appspot.com",
+            messagingSenderId: "768186392597",
+            appId: "1:768186392597:web:0d5d82e0e96f0de8fe6e1c",
+            measurementId: "G-Q2VT4ZEZZN"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const pages = document.querySelectorAll('.page');
+            const hamburger = document.getElementById('hamburger');
+            const sidebar = document.getElementById('sidebar');
+            const closeSidebar = document.getElementById('close-sidebar');
+            const overlay = document.getElementById('overlay');
+            const navLinks = { home: document.getElementById('nav-home'), login: document.getElementById('nav-login'), signup: document.getElementById('nav-signup') };
+            const getStartedBtn = document.getElementById('get-started-btn');
+            const buyNowButtons = document.querySelectorAll('.buy-now-btn');
+            const loginForm = document.getElementById('login-form');
+            const signupForm = document.getElementById('signup-form');
+            const showSignupBtn = document.getElementById('show-signup');
+            const showLoginBtn = document.getElementById('show-login');
+            const logoutBtn = document.getElementById('logout-btn');
+            const loginError = document.getElementById('login-error');
+            const signupError = document.getElementById('signup-error');
+            const userEmailDisplay = document.getElementById('user-email-display');
+            const startBtn = document.getElementById('start-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            const apiKeyInput = document.getElementById('api-key-input');
+            const editApiKeyBtn = document.getElementById('edit-api-key-btn');
+            const keywordsInput = document.getElementById('keywords-input');
+            const searchesLeftEl = document.getElementById('searches-left');
+            const activeLogContent = document.getElementById('active-log-content');
+            const liveCollectionCard = document.getElementById('live-collection-card');
+            const liveEmailCount = document.getElementById('live-email-count');
+            const liveDownloadBtn = document.getElementById('live-download-btn');
+            const limitOverCard = document.getElementById('limit-over-card');
+            const updateLimitBtn = document.getElementById('update-limit-btn');
+            const historySection = document.getElementById('history-section');
+            const googleLoginBtn = document.getElementById('google-login-btn');
+
+            let isRunning = false;
+            let searchesLeft = 0;
+            let sessionEmails = new Set();
+            const whatsappLink = 'https://wa.me/qr/UVDDQAD5XCKOE1';
+
+            // --- Mobile Menu & Page Navigation ---
+            function showPage(pageId) {
+                pages.forEach(page => page.classList.remove('active'));
+                document.getElementById(pageId).classList.add('active');
+                sidebar.classList.remove('open');
+                overlay.classList.remove('open');
+            }
+            hamburger.addEventListener('click', () => { sidebar.classList.add('open'); overlay.classList.add('open'); });
+            closeSidebar.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('open'); });
+            overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('open'); });
+            navLinks.home.addEventListener('click', (e) => { e.preventDefault(); showPage('home-page'); });
+            navLinks.login.addEventListener('click', (e) => { e.preventDefault(); showPage('login-page'); });
+            navLinks.signup.addEventListener('click', (e) => { e.preventDefault(); showPage('signup-page'); });
+            getStartedBtn.addEventListener('click', (e) => { e.preventDefault(); showPage('login-page'); });
+            
+            // --- WhatsApp Button Logic ---
+            buyNowButtons.forEach(btn => btn.addEventListener('click', (e) => { 
+                e.preventDefault(); 
+                window.open(whatsappLink, '_blank'); 
+            }));
+
+            showSignupBtn.addEventListener('click', () => showPage('signup-page'));
+            showLoginBtn.addEventListener('click', () => showPage('login-page'));
+
+            // --- Authentication State Observer ---
+            onAuthStateChanged(auth, user => {
+                if (user) {
+                    userEmailDisplay.textContent = user.email;
+                    logoutBtn.style.display = 'block';
+                    hamburger.style.display = 'none';
+                    showPage('user-panel');
+                    loadHistory(user.uid);
+                    loadApiKey(user.uid);
+                } else {
+                    logoutBtn.style.display = 'none';
+                    hamburger.style.display = 'flex';
+                    showPage('home-page');
+                }
+            });
+
+            // --- Auth Logic ---
+            signupForm.addEventListener('submit', e => { 
+                e.preventDefault(); 
+                const email = signupForm.querySelector('input[name="email"]').value;
+                const password = signupForm.querySelector('input[name="password"]').value;
+                signupError.textContent = ''; 
+                createUserWithEmailAndPassword(auth, email, password).catch(err => signupError.textContent = err.message); 
+            });
+            loginForm.addEventListener('submit', e => { 
+                e.preventDefault(); 
+                const email = loginForm.querySelector('input[name="email"]').value;
+                const password = loginForm.querySelector('input[name="password"]').value;
+                loginError.textContent = ''; 
+                signInWithEmailAndPassword(auth, email, password).catch(err => loginError.textContent = err.message); 
+            });
+            logoutBtn.addEventListener('click', () => signOut(auth));
+            
+            googleLoginBtn.addEventListener('click', () => {
+                const provider = new GoogleAuthProvider();
+                signInWithPopup(auth, provider)
+                    .catch(error => {
+                        loginError.textContent = error.message;
+                    });
+            });
+
+            // --- Access Key Logic ---
+            async function loadApiKey(userId) {
+                const userDocRef = doc(db, 'users', userId);
+                try {
+                    const docSnap = await getDoc(userDocRef);
+                    const icon = editApiKeyBtn.querySelector('i');
+                    if (docSnap.exists() && docSnap.data().apiKey) {
+                        apiKeyInput.value = docSnap.data().apiKey;
+                        apiKeyInput.disabled = true;
+                        icon.classList.remove('fa-save');
+                        icon.classList.add('fa-pencil-alt');
+                    } else {
+                        apiKeyInput.disabled = false;
+                        icon.classList.remove('fa-pencil-alt');
+                        icon.classList.add('fa-save');
+                    }
+                } catch (error) {
+                    console.error("Error loading API key:", error);
+                }
+            }
+
+            async function saveApiKey(userId, apiKey) {
+                const userDocRef = doc(db, 'users', userId);
+                try {
+                    await setDoc(userDocRef, { apiKey: apiKey }, { merge: true });
+                    updateActiveLog('Access key saved successfully!');
+                } catch (error) {
+                    console.error("Error saving API key:", error);
+                    updateActiveLog('<strong>Error:</strong> Could not save access key.');
+                }
+            }
+            
+            editApiKeyBtn.addEventListener('click', async () => {
+                const icon = editApiKeyBtn.querySelector('i');
+                const currentUser = auth.currentUser;
+                if (!currentUser) return;
+
+                if (apiKeyInput.disabled) {
+                    apiKeyInput.disabled = false;
+                    icon.classList.remove('fa-pencil-alt');
+                    icon.classList.add('fa-save');
+                    apiKeyInput.focus();
+                } else {
+                    const apiKey = apiKeyInput.value.trim();
+                    if (apiKey) {
+                        await saveApiKey(currentUser.uid, apiKey);
+                        apiKeyInput.disabled = true;
+                        icon.classList.remove('fa-save');
+                        icon.classList.add('fa-pencil-alt');
+                    } else {
+                        updateActiveLog('<strong>Error:</strong> Access key cannot be empty.');
+                    }
+                }
+            });
+
+            // --- Scraper Panel Logic ---
+            stopBtn.addEventListener('click', () => { if(isRunning) { isRunning = false; updateActiveLog('Stopping process...'); stopBtn.disabled = true; } });
+            stopBtn.disabled = true;
+
+            function updateActiveLog(message) { activeLogContent.innerHTML = `<p>${message}</p>`; }
+            function updateSearchesLeftUI() { searchesLeftEl.textContent = `Searches Left: ${searchesLeft}`; }
+            
+            startBtn.addEventListener('click', async () => {
+                if (isRunning) return;
+                const rawApiValue = apiKeyInput.value.trim(), keywords = keywordsInput.value.trim().split('\n').filter(k => k.trim() !== ''), parts = rawApiValue.split(':'), apiKey = parts[0];
+                searchesLeft = parseInt(parts[1], 10);
+                if (!apiKey || keywords.length === 0 || isNaN(searchesLeft)) { updateActiveLog('<strong>Error:</strong> Provide a valid Access Key (e.g., key:100) and keywords.'); return; }
+                if (apiKeyInput.disabled === false) { updateActiveLog('<strong>Error:</strong> Please save your Access Key before starting.'); return; }
+                
+                isRunning = true; startBtn.disabled = true; stopBtn.disabled = false; limitOverCard.style.display = 'none';
+                sessionEmails.clear();
+                liveCollectionCard.style.display = 'block'; liveEmailCount.textContent = '0'; liveDownloadBtn.disabled = true;
+                updateSearchesLeftUI();
+
+                for (const keyword of keywords) {
+                    if (!isRunning || searchesLeft <= 0) { if (searchesLeft <= 0) limitOverCard.style.display = 'block'; updateActiveLog(searchesLeft <= 0 ? '<strong>Search limit reached.</strong>' : 'Process stopped.'); isRunning = false; break; }
+                    searchesLeft--; updateSearchesLeftUI();
+                    updateActiveLog(`Searching for:<br><strong>${keyword}</strong>`);
+                    
+                    try {
+                        const response = await fetch(`https://google-search72.p.rapidapi.com/search?q=${encodeURIComponent(keyword)}&num=100`, { headers: { 'X-RapidAPI-Key': apiKey, 'X-RapidAPI-Host': 'google-search72.p.rapidapi.com' } });
+                        if (!response.ok) { updateActiveLog(`<strong>API ERROR (Status: ${response.status})</strong>`); limitOverCard.style.display = 'block'; isRunning = false; break; }
+                        const data = await response.json();
+                        updateActiveLog(`Collecting emails for:<br><strong>${keyword}</strong>`);
+                        if (data && data.items) { const extracted = JSON.stringify(data.items).match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi) || []; extracted.forEach(email => sessionEmails.add(email.toLowerCase())); }
+                        liveEmailCount.textContent = sessionEmails.size;
+                        if (sessionEmails.size > 0) liveDownloadBtn.disabled = false;
+                    } catch (error) { updateActiveLog(`<strong>NETWORK ERROR</strong>`); isRunning = false; break; }
+                     await new Promise(resolve => setTimeout(resolve, 1100));
+                }
+                
+                if (isRunning) updateActiveLog('All keywords processed!');
+                const currentUser = auth.currentUser;
+                if (currentUser && sessionEmails.size > 0) { await saveHistory(currentUser.uid, keywords, Array.from(sessionEmails)); }
+                isRunning = false; startBtn.disabled = false; stopBtn.disabled = true;
+            });
+
+            // --- History Logic ---
+            async function saveHistory(userId, keywords, emails) {
+                if (!userId || !keywords.length || !emails.length) return;
+                try { 
+                    const historyCollectionRef = collection(db, 'users', userId, 'history');
+                    await addDoc(historyCollectionRef, { 
+                        keywords, 
+                        emails, 
+                        timestamp: serverTimestamp() 
+                    }); 
+                    loadHistory(userId); 
+                } catch (error) { console.error("Error saving history:", error); }
+            }
+            async function loadHistory(userId) {
+                historySection.innerHTML = '<p>Loading history...</p>';
+                const historyCollectionRef = collection(db, 'users', userId, 'history');
+                const q = query(historyCollectionRef, orderBy('timestamp', 'desc'));
+                try {
+                    const snapshot = await getDocs(q);
+                    if (snapshot.empty) { historySection.innerHTML = '<p>No scraping history found.</p>'; return; }
+                    historySection.innerHTML = '';
+                    snapshot.forEach(docSnap => {
+                        const data = docSnap.data(), item = document.createElement('div'), date = new Date(data.timestamp.seconds * 1000).toLocaleString();
+                        item.className = 'history-item';
+                        item.innerHTML = `
+                            <h4>Session on ${date}</h4>
+                            <div class="history-details">
+                                <p>Keywords: ${data.keywords.length} | Emails: ${data.emails.length}</p>
+                                <button class="action-btn download-btn">Download</button>
+                            </div>
+                        `;
+                        item.querySelector('.download-btn').addEventListener('click', () => downloadEmails(data.emails, `history_${docSnap.id}.txt`));
+                        historySection.appendChild(item);
+                    });
+                } catch (error) { console.error(error); historySection.innerHTML = '<p>Could not load history.</p>'; }
+            }
+            function downloadEmails(emails, filename) {
+                if (!emails || emails.length === 0) return;
+                const text = emails.join('\n'), element = document.createElement('a');
+                element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+                element.setAttribute('download', filename);
+                element.style.display = 'none'; document.body.appendChild(element); element.click(); document.body.removeChild(element);
+            }
+        });
+    </script>
+</body>
+</html>
