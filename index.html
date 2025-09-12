@@ -494,7 +494,6 @@
                     updateActiveLog(`Searching for:<br><strong>${keyword}</strong>`);
                     
                     try {
-                        // ******************* পরিবর্তন এখানে *******************
                         const response = await fetch(`https://google-search74.p.rapidapi.com/?query=${encodeURIComponent(keyword)}&limit=300`, { 
                             headers: { 
                                 'X-RapidAPI-Key': apiKey, 
@@ -525,7 +524,8 @@
                         isRunning = false; 
                         break; 
                     }
-                    await new Promise(resolve => setTimeout(resolve, 1100)); // Delay to avoid rate limiting
+                    // *** পরিবর্তন এখানে: গতি কমিয়ে প্রতি সেকেন্ডে ৩টি রিকোয়েস্ট করা হয়েছে ***
+                    await new Promise(resolve => setTimeout(resolve, 334)); 
                 }
                 
                 if (isRunning) updateActiveLog('All keywords processed!');
@@ -559,7 +559,7 @@
             async function loadHistory(userId) {
                 historySection.innerHTML = '<p>Loading history...</p>';
                 const historyCollectionRef = collection(db, 'users', userId, 'history');
-                const q = query(historyCollectionRef, orderBy('timestamp', 'desc'));
+                const q = query(historyCollection-ref, orderBy('timestamp', 'desc'));
                 try {
                     const snapshot = await getDocs(q);
                     if (snapshot.empty) { 
